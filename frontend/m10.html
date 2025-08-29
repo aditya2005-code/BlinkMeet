@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC Meeting Room</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    .glass {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .hover-scale {
+      transition: transform 0.2s ease;
+    }
+    .hover-scale:hover {
+      transform: scale(1.05);
+    }
+    .log-container {
+      scrollbar-width: thin;
+      scrollbar-color: #4ade80 #1f2937;
+    }
+    .log-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .log-container::-webkit-scrollbar-track {
+      background: #1f2937;
+    }
+    .log-container::-webkit-scrollbar-thumb {
+      background: #4ade80;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800">
+
+  <!-- Join Section -->
+  <div id="joinSection" class="min-h-screen p-4">
+    <div class="max-w-md mx-auto">
+      <div class="text-center text-white mb-8 pt-12">
+        <div class="flex justify-center mb-4">
+          <div class="p-4 bg-white/20 rounded-full backdrop-blur-sm">
+            <i data-lucide="video" class="w-12 h-12"></i>
+          </div>
+        </div>
+        <h1 class="text-4xl font-bold mb-2">WebRTC Meeting</h1>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-2xl p-6 backdrop-blur-sm">
+        <h3 class="text-xl font-semibold text-gray-800 mb-6">Join or Create a Meeting</h3>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Room ID</label>
+            <input
+              type="text"
+              id="roomInput"
+              placeholder="Enter room ID or create new room"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
+            <input
+              type="text"
+              id="nameInput"
+              placeholder="Enter your name"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+            />
+          </div>
+
+          <div class="flex flex-col space-y-3 pt-4">
+            <button
+              id="joinBtn"
+              class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium py-3 px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 hover-scale transition-all duration-200 shadow-lg"
+            >
+              Join Meeting
+            </button>
+            <button
+              id="createBtn"
+              class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium py-3 px-6 rounded-xl hover:from-green-600 hover:to-emerald-700 hover-scale transition-all duration-200 shadow-lg"
+            >
+              Create New Room
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meeting Section -->
+  <div id="meetingSection" class="hidden min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <i data-lucide="video" class="w-6 h-6 text-blue-600"></i>
+              Room: <span id="currentRoom"></span>
+            </h3>
+            <p class="text-gray-600 mt-1">Participant: <span id="currentUser"></span></p>
+          </div>
+          <div class="flex items-center gap-4 mt-4 md:mt-0">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">Share Room ID:</span>
+              <button
+                id="copyRoomBtn"
+                class="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <span class="font-mono font-semibold" id="shareRoom"></span>
+                <i data-lucide="copy" class="w-4 h-4" id="copyIcon"></i>
+                <i data-lucide="check" class="w-4 h-4 hidden" id="checkIcon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Grid -->
+      <div class="grid md:grid-cols-2 gap-6 mb-6">
+        <div class="relative bg-black rounded-2xl overflow-hidden shadow-xl">
+          <video
+            id="localVideo"
+            autoplay
+            playsinline
+            muted
+            class="w-full h-80 object-cover"
+          ></video>
+          <div class="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm font-medium">
+            You
+          </div>
+          <div class="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2" id="localStatus">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+            <i data-lucide="mic" class="w-4 h-4"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+        <div class="flex flex-wrap justify-center gap-4">
+          <button
+            id="toggleVideo"
+            class="flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover-scale bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            <i data-lucide="video" class="w-5 h-5"></i>
+            Video On
+          </button>
+
+          <button
+            id="toggleAudio"
+            class="flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover-scale bg-green-500 hover:bg-green-600 text-white"
+          >
+            <i data-lucide="mic" class="w-5 h-5"></i>
+            Mic On
+          </button>
+
+          <button
+            id="shareScreen"
+            class="flex items-center gap-3 bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-medium transition-all hover-scale"
+          >
+            <i data-lucide="monitor" class="w-5 h-5"></i>
+            Share Screen
+          </button>
+
+          <button
+            id="leaveCall"
+            class="flex items-center gap-3 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-medium transition-all hover-scale"
+          >
+            <i data-lucide="phone-off" class="w-5 h-5"></i>
+            Leave Call
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Grid -->
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl shadow-xl p-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i data-lucide="wifi" class="w-5 h-5 text-green-500" id="connectionIcon"></i>
+            Connection Status
+          </h4>
+          <div class="mb-4">
+            <span id="connectionBadge" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+              Connecting...
+            </span>
+          </div>
+          <div class="bg-gray-900 text-green-400 p-4 rounded-xl font-mono text-xs h-48 overflow-y-auto log-container" id="connectionLog">
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl p-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i data-lucide="users" class="w-5 h-5 text-blue-500"></i>
+            Participants
+          </h4>
+          <div class="space-y-3" id="participantsList">
+            <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">
+              <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <span class="text-white text-sm font-medium">?</span>
+              </div>
+              <span class="text-gray-800 font-medium">Waiting for participants...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- <script src="./m10.js"></script> -->
+   <script src="js/rtc.js"></script>
+</body>
+</html>

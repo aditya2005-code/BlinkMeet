@@ -68,8 +68,8 @@ recordBtn.addEventListener('click', () => {
             const url = URL.createObjectURL(blob);
             recorderVideoRef = url;
             recordingComplete = true;
-            playback.src = url;                  // ✅ preview in player
-            downloadBtn.disabled = false;        // ✅ enable download button
+            playback.src = url;                  
+            downloadBtn.disabled = false;        
             downloadBtn.onclick = () => downloadRecordedVideo(url);
             stoptimer();
         };
